@@ -53,7 +53,8 @@ def upgrade():
                 regexp_replace(COALESCE(telephone_number, ''), '[^0-9]', '', 'g'),
                 npi
             )
-            WHERE type IN ('primary', 'secondary', 'practice', 'site');
+            WHERE type IN ('primary', 'secondary', 'practice', 'site')
+              AND regexp_replace(COALESCE(telephone_number, ''), '[^0-9]', '', 'g') <> '';
             """
         )
         bind.exec_driver_sql(
@@ -65,6 +66,14 @@ def upgrade():
               AND phone_number <> '';
             """
         )
+        bind.exec_driver_sql(
+            f"""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS entity_address_unified_idx_service_address_key_npi
+            ON {_qt(schema, "entity_address_unified")} (address_key, npi)
+            WHERE type IN ('primary', 'secondary', 'practice', 'site')
+              AND address_key IS NOT NULL;
+            """
+        )
 
 
 def downgrade():
@@ -72,6 +81,9 @@ def downgrade():
     with op.get_context().autocommit_block():
         op.get_bind().exec_driver_sql(
             f"DROP INDEX CONCURRENTLY IF EXISTS {_q(schema)}.entity_address_unified_idx_service_phone_number_npi;"
+        )
+        op.get_bind().exec_driver_sql(
+            f"DROP INDEX CONCURRENTLY IF EXISTS {_q(schema)}.entity_address_unified_idx_service_address_key_npi;"
         )
         op.get_bind().exec_driver_sql(
             f"DROP INDEX CONCURRENTLY IF EXISTS {_q(schema)}.entity_address_unified_idx_service_phone_digits_npi;"
