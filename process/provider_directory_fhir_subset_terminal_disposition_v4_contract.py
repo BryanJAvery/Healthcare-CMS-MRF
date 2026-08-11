@@ -112,7 +112,9 @@ def _validated_resource(
     return resource_by_field
 
 
-def _validated_lineage(value: object) -> dict[str, Any]:
+def validated_direct_lineage(value: object) -> dict[str, Any]:
+    """Validate that a direct disposition has no competing lineage."""
+
     if not isinstance(value, Mapping) or set(value) != DIRECT_V4_LINEAGE_FIELDS:
         raise ReviewedSubsetTerminalDispositionError("evidence")
     lineage_by_field = dict(value)
@@ -199,7 +201,7 @@ def validated_direct_v4_terminal_marker(marker_value: object) -> dict[str, Any]:
         for field_name in hash_fields
     ):
         raise ReviewedSubsetTerminalDispositionError("evidence")
-    _validated_lineage(marker_value.get("direct_lineage"))
+    validated_direct_lineage(marker_value.get("direct_lineage"))
     return dict(marker_value)
 
 
@@ -241,5 +243,6 @@ def direct_v4_terminal_marker(
 
 __all__ = (
     "direct_v4_terminal_marker",
+    "validated_direct_lineage",
     "validated_direct_v4_terminal_marker",
 )
